@@ -15,3 +15,20 @@ model Post {
 
   @@index([name])
 }
+
+
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String   @unique
+  password  String   // Store a hashed password
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model EmailVerificationCode {
+  id        String   @id @default(uuid())
+  email     String
+  code      String   // Random code sent to the user
+  expiresAt DateTime // Expiry time for the code
+}
