@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  seed = "ts-node prisma/seed.ts"
 }
 
 datasource db {
@@ -17,18 +18,38 @@ model Post {
 }
 
 
-model User {
-  id        String   @id @default(uuid())
-  name      String?
-  email     String   @unique
-  password  String   // Store a hashed password
-  isVerified Boolean @default(false)
-  createdAt DateTime @default(now())
-}
 
 model EmailVerificationCode {
   id        String   @id @default(uuid())
   email     String
   code      String   // Random code sent to the user
   expiresAt DateTime // Expiry time for the code
+}
+
+model User {
+  id        String         @id @default(uuid())
+  name      String?
+  email     String         @unique
+  password  String         // Store a hashed password
+  isVerified Boolean       @default(false)
+  createdAt DateTime       @default(now())
+  categories UserCategory[] // Relation to UserCategory model
+}
+
+model Category {
+  id        Int            @id @default(autoincrement())
+  name      String         @unique
+  createdAt DateTime       @default(now())
+  users     UserCategory[] // Relation to UserCategory model
+}
+
+model UserCategory {
+  id         Int           @id @default(autoincrement())
+  userId     String
+  categoryId Int
+  user       User          @relation(fields: [userId], references: [id])
+  category   Category      @relation(fields: [categoryId], references: [id])
+  createdAt  DateTime      @default(now())
+
+  @@unique([userId, categoryId]) // Ensure no duplicate user-category pairs
 }
