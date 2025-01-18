@@ -1,82 +1,50 @@
-import { createTRPCRouter, publicProcedure } from "../trpc";
 import { z } from "zod";
-import { nanoid } from "nanoid";
-import { TRPCError } from "@trpc/server";
-import { sendEmail } from "~/utils/email"; // Utility to send emails
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { getCurrentUser } from "~/utils/lib";
 
 export const userRouter = createTRPCRouter({
-  signup: publicProcedure
+  saveInterests: publicProcedure
     .input(
       z.object({
-        name: z.string().optional(),
-        email: z.string().email(),
-        password: z.string().min(6),
+        categoryIds: z.array(z.number()), // Array of category IDs
       }),
     )
-    .mutation(async ({ input, ctx }) => {
-      const { name, email, password } = input;
+    .mutation(async ({ ctx, input }) => {
+      const { categoryIds } = input;
+      const currentUser = await getCurrentUser();
+      const userId = currentUser.id;
 
-      // Check if user already exists
-      const existingUser = await ctx.db.user.findUnique({
-        where: { email },
-      });
-      if (existingUser) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Email already exists",
-        });
-      }
-
-      // Generate verification code
-      const verificationCode = nanoid(6); // 6-character random code
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // Expires in 15 mins
-
-      // Store verification code in the database
-      await ctx.db.emailVerificationCode.create({
-        data: { email, code: verificationCode, expiresAt },
+      // Remove existing interests for the user
+      await ctx.db.userCategory.deleteMany({
+        where: { userId },
       });
 
-      // Send verification email
-      await sendEmail(email, `Your verification code is: ${verificationCode}`);
+      // Save new interests
+      const userCategories = categoryIds.map((categoryId) => ({
+        userId,
+        categoryId,
+      }));
 
-      return { message: "Verification code sent to your email" };
+      await ctx.db.userCategory.createMany({
+        data: userCategories,
+      });
+
+      return { success: true };
     }),
+  getUserCategories: publicProcedure.query(async ({ ctx }) => {
+    const currentUser = await getCurrentUser();
+    const userId = currentUser.id;
 
-  verifyCode: publicProcedure
-    .input(
-      z.object({
-        email: z.string().email(),
-        code: z.string(),
-        password: z.string().min(6),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      const { email, code, password } = input;
+    // Fetch the categories that the user has selected
+    const userCategories = await ctx.db.userCategory.findMany({
+      where: { userId },
+      include: { category: true }, // Include category details
+    });
 
-      // Find the verification code
-      const verificationRecord = await ctx.db.emailVerificationCode.findFirst({
-        where: { email, code },
-      });
-
-      if (!verificationRecord || verificationRecord.expiresAt < new Date()) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Invalid or expired code",
-        });
-      }
-
-      //   // Hash the password
-      //   const bcrypt = await import("bcryptjs");
-      //   const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Create the user
-      const user = await ctx.db.user.create({
-        data: { email, password, isVerified: true },
-      });
-
-      // Clean up verification records
-      await ctx.db.emailVerificationCode.deleteMany({ where: { email } });
-
-      return { message: "User verified and created successfully", user };
-    }),
+    return userCategories.map((userCategory) => userCategory.category);
+  }),
+  getUser: publicProcedure.query(async ({ ctx }) => {
+    const currentUser = await getCurrentUser();
+    return currentUser;
+  }),
 });
