@@ -6,3 +6,9 @@ export interface User {
   isVerified: boolean;
   createdAt: string;
 }
+
+export interface Category {
+  name: string;
+  createdAt: Date;
+  id: number;
+}

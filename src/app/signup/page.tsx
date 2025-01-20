@@ -5,6 +5,7 @@ import Header from "../_components/header";
 import { api } from "~/trpc/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { Category, User } from "~/types/global";
 
 type FormData = {
   name: string;
@@ -14,7 +15,6 @@ type FormData = {
 
 type Errors = Partial<FormData & { verificationCode: string; global: string }>;
 
-// Define custom error types
 interface ApiError {
   code?: string;
   message: string;
@@ -35,6 +35,13 @@ export default function Signup() {
 
   const signupMutation = api.auth.signup.useMutation();
   const verifyCodeMutation = api.auth.verifyCode.useMutation();
+
+  const { data: userData, refetch: refetchUser } =
+    api.user.getUser.useQuery() as { data: User; refetch: () => void };
+
+  const { data: userCategoriesData, refetch: refetchUserCategories } =
+    api.user.getUserCategories.useQuery<Category[]>();
+
   const router = useRouter();
 
   const obfuscateEmail = useCallback((email: string): string => {
@@ -62,7 +69,7 @@ export default function Signup() {
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" })); // Clear specific field error
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   }, []);
 
   const handleSubmit = useCallback(
@@ -110,6 +117,8 @@ export default function Signup() {
         { ...formData, verificationCode: code },
         {
           onSuccess: () => {
+            void refetchUser();
+            void refetchUserCategories();
             router.push("/home");
             setLoading(false);
           },

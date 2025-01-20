@@ -13,7 +13,6 @@ interface Payload extends JWTPayload {
 }
 
 export async function encrypt(payload: Payload): Promise<string> {
-  console.log(":::::encrpt ts:::", payload);
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -24,8 +23,8 @@ export async function encrypt(payload: Payload): Promise<string> {
 export async function decrypt(input: string): Promise<Payload> {
   const { payload } = (await jwtVerify(input, key, {
     algorithms: ["HS256"],
-  })) as { payload: Payload }; // Explicitly type the result
-  console.log(":::::decrypt ts:::", typeof payload, payload);
+  })) as { payload: Payload };
+
   return payload;
 }
 

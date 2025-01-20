@@ -27,44 +27,34 @@ const InterestSelection: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const router = useRouter();
 
-  // Fetch categories for the current page
   const { data: categoriesData, isLoading } =
     api.categories.getCategories.useQuery<CategoriesResponse>({ page });
 
-  // Fetch user's previously selected categories
   const { data: userCategoriesData } =
     api.user.getUserCategories.useQuery<Category[]>();
 
-  // Save selected categories
   const { mutate: saveUserInterests } = api.user.saveInterests.useMutation();
 
-  // Fetch user data
   const { data: userData } = api.user.getUser.useQuery() as { data: User };
 
-  console.log("::::userData:::", userData);
-
-  // Logout mutation
   const logoutMutation = api.auth.logout.useMutation({
     onSuccess: () => {
       router.push("/login");
     },
   });
 
-  // Set `totalPages` on the first fetch
   useEffect(() => {
     if (categoriesData && totalPages === null) {
       setTotalPages(categoriesData.totalPages);
     }
   }, [categoriesData, totalPages]);
 
-  // Set selected categories from the user's previously saved interests
   useEffect(() => {
     if (userCategoriesData) {
       setSelectedCategories(userCategoriesData.map((category) => category.id));
     }
   }, [userCategoriesData]);
 
-  // Handle category selection
   const handleCheckboxChange = (categoryId: number) => {
     const isSelected = selectedCategories.includes(categoryId);
     const updatedCategories = isSelected
@@ -79,7 +69,6 @@ const InterestSelection: React.FC = () => {
     await logoutMutation.mutateAsync();
   };
 
-  // Generate page numbers for pagination
   const pageNumbers = totalPages
     ? Array.from({ length: totalPages }, (_, index) => index + 1)
     : [];
