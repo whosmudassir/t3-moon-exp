@@ -1,6 +1,4 @@
 import Link from "next/link";
-
-import { api, HydrateClient } from "~/trpc/server";
 import { FaExternalLinkAlt } from "react-icons/fa";
 
 export default async function Home() {
@@ -13,7 +11,7 @@ export default async function Home() {
             href="/game"
             target="_blank"
           >
-            <h3 className="text-2xl font-bold">Conway's Game of Life</h3>
+            <h3 className="text-2xl font-bold">Conway Game of Life</h3>
             <FaExternalLinkAlt className="text-xl" />
           </Link>
           <Link

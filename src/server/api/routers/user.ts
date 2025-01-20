@@ -12,6 +12,9 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { categoryIds } = input;
       const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        throw new Error("User not found or not authenticated");
+      }
       const userId = currentUser.id;
 
       // Remove existing interests for the user
@@ -33,7 +36,10 @@ export const userRouter = createTRPCRouter({
     }),
   getUserCategories: publicProcedure.query(async ({ ctx }) => {
     const currentUser = await getCurrentUser();
-    const userId = currentUser.id;
+    if (!currentUser) {
+      throw new Error("User not found or not authenticated");
+    }
+    const userId = currentUser?.id;
 
     // Fetch the categories that the user has selected
     const userCategories = await ctx.db.userCategory.findMany({

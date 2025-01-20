@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Header from "../_components/header";
 import { api } from "~/trpc/react";
 import Link from "next/link";
@@ -12,7 +12,13 @@ type FormData = {
   password: string;
 };
 
-type Errors = Partial<FormData & { verificationCode: string; global: string }>; // Allow errors for any field
+type Errors = Partial<FormData & { verificationCode: string; global: string }>;
+
+// Define custom error types
+interface ApiError {
+  code?: string;
+  message: string;
+}
 
 export default function Signup() {
   const [loading, setLoading] = useState(false);
@@ -72,8 +78,8 @@ export default function Signup() {
             setShowVerificationUI(true);
             setLoading(false);
           },
-          onError: (err: any) => {
-            setErrors({ global: err.message });
+          onError: (error: ApiError) => {
+            setErrors({ global: error.message });
             setLoading(false);
           },
         });
@@ -107,8 +113,8 @@ export default function Signup() {
             router.push("/home");
             setLoading(false);
           },
-          onError: (err: any) => {
-            setErrors({ global: err.message });
+          onError: (error: ApiError) => {
+            setErrors({ global: error.message });
             setLoading(false);
           },
         },
@@ -119,7 +125,7 @@ export default function Signup() {
 
   const codeArray = code
     ? code.split("").concat(Array(8 - code.length).fill(""))
-    : Array(8).fill(""); // Ensure 8 boxes
+    : Array(8).fill("");
 
   const mappedArray = codeArray.map((char, index) => (
     <div
@@ -128,7 +134,7 @@ export default function Signup() {
         index === 0 && focused
           ? "border-blue-500 bg-blue-100"
           : "border-gray-300"
-      }`} // Highlight first box if input is focused
+      }`}
     >
       {char}
     </div>
@@ -158,26 +164,22 @@ export default function Signup() {
               <p className="font-semibold">{obfuscateEmail(formData.email)}</p>
             </p>
             <p className="text-center text-sm text-gray-600">Code</p>
-            {/* <div className="flex">{mappedArray}</div> */}
             <form onSubmit={handleVerify} className="relative space-y-4">
-              {/* Mapped Boxes - Displayed above the input field */}
               <div className="absolute left-0 top-0 flex w-full justify-center gap-2">
                 {mappedArray}
               </div>
 
-              {/* Actual Input Field - Hidden or replaced with mapped boxes */}
               <div className="opacity-0">
                 <input
                   type="text"
                   maxLength={8}
                   value={code}
                   onFocus={handleFocus}
-                  onChange={(e) => handleCodeChange(e)}
+                  onChange={handleCodeChange}
                   className="h-10 w-80 rounded-md border border-gray-300 text-center font-mono text-lg focus:border-black focus:outline-none sm:h-12 sm:w-96 sm:text-xl"
                 />
               </div>
 
-              {/* Error messages */}
               {errors.verificationCode && (
                 <p className="text-center text-sm text-red-500">
                   {errors.verificationCode}
@@ -189,7 +191,6 @@ export default function Signup() {
                 </p>
               )}
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 className="w-full rounded-md bg-black py-2 text-sm text-white sm:py-2.5 sm:text-base"

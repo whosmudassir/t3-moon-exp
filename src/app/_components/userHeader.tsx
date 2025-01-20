@@ -1,5 +1,6 @@
 "use client";
-import React, { FC } from "react";
+import React from "react";
+import type { FC } from "react";
 
 interface User {
   name?: string;
@@ -25,7 +26,7 @@ const UserHeader: FC<UserHeaderProps> = ({ handleLogout, user }) => {
   const UserLinks = [
     { href: "#", label: "Help" },
     { href: "#", label: "Orders & Returns" },
-    { href: "#", label: `Hi, ${user.name || "User"}` },
+    { href: "#", label: `Hi, ${user.name ?? "User"}` },
   ];
 
   return (

@@ -1,13 +1,16 @@
-const nodemailer = require("nodemailer");
+import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
 
-export const sendEmail = async (to: string, text: string) => {
-  const transporter = nodemailer.createTransport({
-    service: "Gmail", // Use your email service
-    auth: {
-      user: "whosmudassir@gmail.com", // Your email
-      pass: "llakkfxhoksdznnz", // Your email password
-    },
-  });
+export const sendEmail = async (to: string, text: string): Promise<void> => {
+  const transporter: Transporter<SMTPTransport.SentMessageInfo> =
+    nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: "whosmudassir@gmail.com",
+        pass: "llakkfxhoksdznnz",
+      },
+    });
 
   await transporter.sendMail({
     from: "whosmudassir@gmail.com",
