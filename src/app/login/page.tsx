@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { TRPCClientError } from "@trpc/client";
+import type { User, Category } from "~/types/global";
 
 interface LoginFormData {
   email: string;
@@ -20,13 +21,26 @@ export default function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
-  const loginMutation = api.auth.login.useMutation();
+
+  const { data: userData, refetch: refetchUser } =
+    api.user.getUser.useQuery() as { data: User; refetch: () => void };
+
+  const { data: userCategoriesData, refetch: refetchUserCategories } =
+    api.user.getUserCategories.useQuery<Category[]>();
+
+  const loginMutation = api.auth.login.useMutation({
+    onSuccess: () => {
+      void refetchUser();
+      void refetchUserCategories();
+      router.push("/home");
+    },
+  });
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" })); // Clear field-specific error
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validate = (): Partial<LoginFormData> => {
@@ -54,10 +68,8 @@ export default function Login() {
 
     try {
       await loginMutation.mutateAsync(formData);
-      router.push("/home");
     } catch (err) {
       if (err instanceof TRPCClientError) {
-        // Parse the TRPCError and map to field/global errors
         const message = err.message;
         if (message.includes("Invalid password")) {
           setErrors({ password: "Incorrect password." });

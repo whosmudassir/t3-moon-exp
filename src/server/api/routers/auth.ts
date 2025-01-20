@@ -58,17 +58,11 @@ export const authRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { name, email, verificationCode, password } = input;
       const code = verificationCode;
-      console.log(":code::", verificationCode);
+
       // Find the verification code
       const verificationRecord = await ctx.db.emailVerificationCode.findFirst({
         where: { email, code },
       });
-
-      console.log(
-        ":verificationRecord::",
-        verificationRecord,
-        verificationCode,
-      );
 
       if (!verificationRecord || verificationRecord.expiresAt < new Date()) {
         throw new TRPCError({
@@ -87,7 +81,6 @@ export const authRouter = createTRPCRouter({
       });
 
       await ctx.db.emailVerificationCode.deleteMany({ where: { email } });
-      console.log("::::signed in user data main:::", user);
 
       const filteredUserData = Object.keys(user).reduce(
         (acc: Partial<User>, key: string) => {
@@ -100,7 +93,7 @@ export const authRouter = createTRPCRouter({
         },
         {},
       );
-      console.log("::::signed in user data main:::", filteredUserData);
+
       await createSession(filteredUserData);
 
       return { message: "User verified and created successfully", user };
@@ -126,7 +119,6 @@ export const authRouter = createTRPCRouter({
       if (!isPasswordValid) {
         throw new Error("Invalid password");
       }
-      console.log("::::loggedin user data main:::", user);
 
       const filteredUserData = Object.keys(user).reduce(
         (acc: Partial<User>, key: string) => {
@@ -139,7 +131,7 @@ export const authRouter = createTRPCRouter({
         },
         {},
       );
-      console.log("::::loggedin in user data main 2:::", filteredUserData);
+
       await createSession(filteredUserData);
 
       return { status: "success", message: "Login successful" };
