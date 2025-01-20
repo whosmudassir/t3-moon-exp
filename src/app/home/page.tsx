@@ -5,8 +5,7 @@ import Header from "../_components/header";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 import UserHeader from "../_components/userHeader";
-
-const PAGE_SIZE = 6;
+import type { User } from "~/types/global";
 
 // TypeScript interfaces
 interface Category {
@@ -40,7 +39,9 @@ const InterestSelection: React.FC = () => {
   const { mutate: saveUserInterests } = api.user.saveInterests.useMutation();
 
   // Fetch user data
-  const { data: userData } = api.user.getUser.useQuery();
+  const { data: userData } = api.user.getUser.useQuery() as { data: User };
+
+  console.log("::::userData:::", userData);
 
   // Logout mutation
   const logoutMutation = api.auth.logout.useMutation({
@@ -85,7 +86,7 @@ const InterestSelection: React.FC = () => {
 
   return (
     <>
-      <UserHeader handleLogout={handleLogout} user={userData || " "} />
+      <UserHeader handleLogout={handleLogout} user={userData ?? " "} />
       <Header />
 
       <main className="flex h-[100vh] items-center justify-center bg-gray-100">
@@ -154,7 +155,7 @@ const InterestSelection: React.FC = () => {
                 {pageNumbers
                   .slice(
                     Math.max(page - 3, 0), // Start index (current page - 2)
-                    Math.min(page + 2, totalPages || 0), // End index (current page + 2)
+                    Math.min(page + 2, totalPages ?? 0), // End index (current page + 2)
                   )
                   .map((pageNumber) => (
                     <button
@@ -170,7 +171,7 @@ const InterestSelection: React.FC = () => {
 
                 <button
                   onClick={() =>
-                    setPage((prev) => Math.min(prev + 1, totalPages || 0))
+                    setPage((prev) => Math.min(prev + 1, totalPages ?? 0))
                   }
                   disabled={page === totalPages}
                   className={`mx-1 rounded bg-black px-2 py-1 text-white hover:bg-gray-800 sm:px-4 sm:py-2 ${
@@ -180,7 +181,7 @@ const InterestSelection: React.FC = () => {
                   &gt;
                 </button>
                 <button
-                  onClick={() => setPage(totalPages || 0)}
+                  onClick={() => setPage(totalPages ?? 0)}
                   disabled={page === totalPages}
                   className={`mx-1 rounded bg-black px-2 py-1 text-white hover:bg-gray-800 sm:px-4 sm:py-2 ${
                     page === totalPages ? "cursor-not-allowed opacity-50" : ""
@@ -191,7 +192,7 @@ const InterestSelection: React.FC = () => {
               </div>
 
               <p className="mt-4 text-center">
-                Page {page} of {totalPages || "N/A"}
+                Page {page} of {totalPages ?? "N/A"}
               </p>
             </div>
           </div>

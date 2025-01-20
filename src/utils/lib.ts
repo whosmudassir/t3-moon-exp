@@ -1,10 +1,19 @@
-import { jwtVerify, SignJWT } from "jose";
+import { JWTPayload, jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import { User } from "~/types/global";
 
 const key = new TextEncoder().encode(process.env.TOKEN_SECRET);
 
-export async function encrypt(payload: any) {
+interface Payload extends JWTPayload {
+  user: User;
+  expires: Date;
+  iat: number;
+  exp: number;
+}
+
+export async function encrypt(payload: Payload): Promise<string> {
+  console.log(":::::encrpt ts:::", payload);
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -12,16 +21,19 @@ export async function encrypt(payload: any) {
     .sign(key);
 }
 
-export async function decrypt(input: string): Promise<any> {
-  const { payload } = await jwtVerify(input, key, {
+export async function decrypt(input: string): Promise<Payload> {
+  const { payload } = (await jwtVerify(input, key, {
     algorithms: ["HS256"],
-  });
+  })) as { payload: Payload }; // Explicitly type the result
+  console.log(":::::decrypt ts:::", typeof payload, payload);
   return payload;
 }
 
-export async function updateSession(request: NextRequest) {
+export async function updateSession(
+  request: NextRequest,
+): Promise<Payload | null> {
   const session = request.cookies.get("session")?.value;
-  if (!session) return;
+  if (!session) return null;
 
   //update the expire time
   const parsed = await decrypt(session);
@@ -35,7 +47,7 @@ export async function updateSession(request: NextRequest) {
   return getSession();
 }
 
-export async function getSession() {
+export async function getSession(): Promise<Payload | null> {
   const cookieSession = await cookies();
   const session = cookieSession.get("session")?.value;
   if (!session) return null;
@@ -49,5 +61,12 @@ export async function clearSession() {
 
 export async function getCurrentUser() {
   const currentSession = await getSession();
-  return currentSession.user;
+  return currentSession?.user;
+}
+
+export async function createSession(user: Partial<User>) {
+  const expires = new Date(Date.now() + 1 * 60 * 60 * 1000);
+  const session = await encrypt({ user, expires } as Payload);
+  const cookieStore = await cookies();
+  cookieStore.set("session", session, { expires, httpOnly: true });
 }

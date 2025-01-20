@@ -4,8 +4,9 @@ import { nanoid } from "nanoid";
 import { TRPCError } from "@trpc/server";
 import { sendEmail } from "~/utils/email";
 import bcrypt from "bcryptjs";
-import { clearSession, encrypt } from "~/utils/lib";
+import { createSession } from "~/utils/lib";
 import { cookies } from "next/headers";
+import type { User } from "~/types/global";
 
 export const authRouter = createTRPCRouter({
   signup: publicProcedure
@@ -86,11 +87,21 @@ export const authRouter = createTRPCRouter({
       });
 
       await ctx.db.emailVerificationCode.deleteMany({ where: { email } });
+      console.log("::::signed in user data main:::", user);
 
-      const expires = new Date(Date.now() + 1 * 60 * 60 * 1000);
-      const session = await encrypt({ user, expires });
-      const cookieStore = await cookies();
-      cookieStore.set("session", session, { expires, httpOnly: true });
+      const filteredUserData = Object.keys(user).reduce(
+        (acc: Partial<User>, key: string) => {
+          if (key !== "password") {
+            // @ts-expect-error: Type assertion needed because user[key] may not match User type
+
+            acc[key as keyof User] = user[key as keyof User];
+          }
+          return acc;
+        },
+        {},
+      );
+      console.log("::::signed in user data main:::", filteredUserData);
+      await createSession(filteredUserData);
 
       return { message: "User verified and created successfully", user };
     }),
@@ -115,11 +126,21 @@ export const authRouter = createTRPCRouter({
       if (!isPasswordValid) {
         throw new Error("Invalid password");
       }
+      console.log("::::loggedin user data main:::", user);
 
-      const expires = new Date(Date.now() + 1 * 60 * 60 * 1000);
-      const session = await encrypt({ user, expires });
-      const cookieStore = await cookies();
-      cookieStore.set("session", session, { expires, httpOnly: true });
+      const filteredUserData = Object.keys(user).reduce(
+        (acc: Partial<User>, key: string) => {
+          if (key !== "password") {
+            // @ts-expect-error: Type assertion needed because user[key] may not match User type
+
+            acc[key as keyof User] = user[key as keyof User];
+          }
+          return acc;
+        },
+        {},
+      );
+      console.log("::::loggedin in user data main 2:::", filteredUserData);
+      await createSession(filteredUserData);
 
       return { status: "success", message: "Login successful" };
     }),
