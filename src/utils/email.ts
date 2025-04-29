@@ -7,8 +7,8 @@ export const sendEmail = async (to: string, text: string): Promise<void> => {
     nodemailer.createTransport({
       service: "Gmail",
       auth: {
-        user: "whosmudassir@gmail.com",
-        pass: "llakkfxhoksdznnz",
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
